@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <title>My PWA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My PWA!</h1>
+    <p>This is a simple Progressive Web App example.</p>
+    <button id="greetButton">Click Me!</button>
+    <p id="greeting"></p>
+
+    <script>
+        document.getElementById('greetButton').addEventListener('click', function() {
+            document.getElementById('greeting').innerText = 'Hello, World!';
+        });
+
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('service-worker.js').then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
