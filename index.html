@@ -3,34 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Code Editor</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <title>My PWA</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-        }
-    </style>
 </head>
 <body>
-    <h1>Welcome to My PWA!</h1>
-    <p>This is a simple Progressive Web App example.</p>
-    <button id="greetButton">Click Me!</button>
-    <p id="greeting"></p>
-
+    <div id="app">
+        <aside id="sidebar">
+            <input type="file" id="fileInput" webkitdirectory multiple />
+            <button id="newFolderBtn">New Folder</button>
+            <button id="newFileBtn">New File</button>
+            <ul id="fileList"></ul>
+        </aside>
+        <main id="editor">
+            <textarea id="codeEditor" placeholder="Select a file to edit..."></textarea>
+        </main>
+    </div>
+    <script src="script.js"></script>
     <script>
-        document.getElementById('greetButton').addEventListener('click', function() {
-            document.getElementById('greeting').innerText = 'Hello, World!';
-        });
-
-        // Register the service worker
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('service-worker.js').then(function(registration) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                .then(registration => {
                     console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(function(error) {
-                    console.log('Service Worker registration failed:', error);
+                }).catch(error => {
+                    console.error('Service Worker registration failed:', error);
                 });
             });
         }
