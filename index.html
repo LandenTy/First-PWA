@@ -3,34 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Code Editor</title>
+    <title>Device Monitor</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="app">
-        <aside id="sidebar">
-            <input type="file" id="fileInput" webkitdirectory multiple />
-            <button id="newFolderBtn">New Folder</button>
-            <button id="newFileBtn">New File</button>
-            <ul id="fileList"></ul>
-        </aside>
-        <main id="editor">
-            <textarea id="codeEditor" placeholder="Select a file to edit..."></textarea>
-        </main>
+    <div class="container">
+        <h1>Resource Monitor</h1>
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab('memory')">Memory</button>
+            <button class="tab-button" onclick="openTab('storage')">Storage</button>
+            <button class="tab-button" onclick="openTab('system')">System Info</button>
+        </div>
+
+        <div id="memory" class="tab-content active">
+            <h2>Memory Usage</h2>
+            <canvas id="memoryChart" height="100"></canvas>
+            <p id="memory-info"></p>
+        </div>
+
+        <div id="storage" class="tab-content">
+            <h2>Storage Usage</h2>
+            <canvas id="storageChart" height="100"></canvas>
+            <p id="storage-info"></p>
+        </div>
+
+        <div id="system" class="tab-content">
+            <h2>System Information</h2>
+            <p id="motherboard-info"></p>
+            <p id="chromeos-info"></p>
+            <p id="processor-info"></p>
+        </div>
     </div>
     <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
-            });
-        }
-    </script>
 </body>
 </html>
