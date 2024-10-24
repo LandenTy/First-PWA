@@ -1,6 +1,6 @@
 {
-    "name": "My PWA",
-    "short_name": "PWA",
+    "name": "ChromeOS Device Monitor",
+    "short_name": "Device Monitor",
     "start_url": "index.html",
     "display": "standalone",
     "background_color": "#ffffff",
