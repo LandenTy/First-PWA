@@ -1,153 +1,121 @@
-document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-document.getElementById('newFolderBtn').addEventListener('click', createNewFolder);
-document.getElementById('newFileBtn').addEventListener('click', createNewFile);
+let memoryChart;
+let storageChart;
 
-let currentFilePath = '';
-let currentFolder = null;
-
-function handleFileSelect(event) {
-    const fileList = event.target.files;
-    const ul = document.getElementById('fileList');
-    ul.innerHTML = ''; // Clear existing list
-
-    const files = {};
-    
-    Array.from(fileList).forEach(file => {
-        const pathParts = file.webkitRelativePath.split('/');
-        const fileName = pathParts.pop();
-        let currentLevel = files;
-
-        pathParts.forEach(part => {
-            currentLevel[part] = currentLevel[part] || {};
-            currentLevel = currentLevel[part];
-        });
-
-        currentLevel[fileName] = file;
+// Initialize charts
+function initializeCharts() {
+    const ctxMemory = document.getElementById('memoryChart').getContext('2d');
+    memoryChart = new Chart(ctxMemory, {
+        type: 'bar',
+        data: {
+            labels: ['Used', 'Available'],
+            datasets: [{
+                label: 'Memory (MB)',
+                data: [0, 0], // initial values
+                backgroundColor: ['#76c7c0', '#e0e0e0'],
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Memory (MB)',
+                    }
+                }
+            }
+        }
     });
 
-    renderFileList(files, ul);
-}
-
-function renderFileList(files, parentUl) {
-    for (const [key, value] of Object.entries(files)) {
-        const li = document.createElement('li');
-
-        if (typeof value === 'object' && Object.keys(value).length > 0) {
-            li.classList.add('folder');
-            li.textContent = key;
-            const ul = document.createElement('ul');
-            renderFileList(value, ul);
-            li.appendChild(ul);
-            parentUl.appendChild(li);
-
-            li.addEventListener('contextmenu', (event) => {
-                event.preventDefault();
-                currentFolder = li; // Set current folder for context menu
-                showContextMenu(event);
-            });
-        } else {
-            li.classList.add('file');
-            li.textContent = key;
-            li.addEventListener('click', (event) => {
-                event.stopPropagation();
-                loadFile(value);
-                highlightSelectedFile(li);
-            });
-            parentUl.appendChild(li);
+    const ctxStorage = document.getElementById('storageChart').getContext('2d');
+    storageChart = new Chart(ctxStorage, {
+        type: 'bar',
+        data: {
+            labels: ['Used', 'Available'],
+            datasets: [{
+                label: 'Storage (GB)',
+                data: [0, 0], // initial values
+                backgroundColor: ['#ffa500', '#e0e0e0'],
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Storage (GB)',
+                    }
+                }
+            }
         }
+    });
+}
+
+// Update Device Info and Charts
+async function updateDeviceInfo() {
+    // Get memory info
+    const memoryInfo = navigator.deviceMemory; // in GB
+    const totalMemory = memoryInfo * 1024; // convert to MB
+    const usedMemory = totalMemory - (performance.memory.jsHeapSizeLimit / 1024 / 1024); // estimate used memory
+    const memoryAvailable = totalMemory - usedMemory;
+
+    // Update Memory Info
+    memoryChart.data.datasets[0].data = [usedMemory, memoryAvailable];
+    memoryChart.update();
+    document.getElementById('memory-info').innerText = `Used: ${Math.round(usedMemory)} MB of ${Math.round(totalMemory)} MB`;
+
+    // Get storage info
+    try {
+        const storageInfo = await navigator.storage.estimate();
+        const totalStorage = storageInfo.quota / (1024 * 1024 * 1024); // in GB
+        const usedStorage = (storageInfo.usage / (1024 * 1024 * 1024)); // in GB
+        const storageAvailable = totalStorage - usedStorage;
+
+        // Update Storage Info
+        storageChart.data.datasets[0].data = [usedStorage, storageAvailable];
+        storageChart.update();
+        document.getElementById('storage-info').innerText = `Used: ${Math.round(usedStorage)} GB of ${Math.round(totalStorage)} GB`;
+    } catch (error) {
+        console.error("Storage API not accessible:", error);
     }
+
+    // Update System Info
+    updateSystemInfo();
 }
 
-async function loadFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        document.getElementById('codeEditor').value = event.target.result;
-        currentFilePath = file.name; // Store the current file name
-    };
-    reader.readAsText(file);
+function updateSystemInfo() {
+    // Get ChromeOS Build Version from userAgent
+    const userAgent = navigator.userAgent;
+    const chromeOSBuildMatch = userAgent.match(/CrOS\s\w+\s([\d\.]+)/);
+    const chromeOSBuild = chromeOSBuildMatch ? chromeOSBuildMatch[1] : 'Unknown';
+
+    // Example static data for demonstration
+    const motherboardType = 'Octopus'; // Replace with actual method to retrieve
+    const processor = navigator.userAgent.includes('Intel') ? 'Intel Processor' : 'ARM Processor'; // Basic detection
+
+    document.getElementById('motherboard-info').innerText = `Motherboard Type: ${motherboardType}`;
+    document.getElementById('chromeos-info').innerText = `ChromeOS Build: ${chromeOSBuild}`;
+    document.getElementById('processor-info').innerText = `Processor: ${processor}`;
 }
 
-function highlightSelectedFile(selectedLi) {
-    const allFiles = document.querySelectorAll('#fileList .file');
-    allFiles.forEach(file => file.classList.remove('selected'));
-    selectedLi.classList.add('selected');
+// Tab functionality
+function openTab(tabName) {
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('active');
+    });
+
+    document.getElementById(tabName).classList.add('active');
+    document.querySelector(`.tab-button[onclick="openTab('${tabName}')"]`).classList.add('active');
 }
 
-async function createNewFile() {
-    if (currentFolder) {
-        const fileName = prompt("Enter file name:");
-        if (fileName) {
-            const newFile = document.createElement('li');
-            newFile.classList.add('file');
-            newFile.textContent = fileName;
-
-            newFile.addEventListener('click', (event) => {
-                event.stopPropagation();
-                loadNewFile(fileName);
-                highlightSelectedFile(newFile);
-            });
-
-            const fileHandle = await window.showFilePicker({
-                suggestedName: fileName,
-                types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }],
-            });
-
-            const writable = await fileHandle.createWritable();
-            await writable.write("Initial content..."); // Change this to initial content you want
-            await writable.close();
-
-            currentFolder.querySelector('ul').appendChild(newFile);
-        }
-    }
-}
-
-function createNewFolder() {
-    if (currentFolder) {
-        const folderName = prompt("Enter folder name:");
-        if (folderName) {
-            const newFolder = document.createElement('li');
-            newFolder.classList.add('folder');
-            newFolder.textContent = folderName;
-            const ul = document.createElement('ul');
-            newFolder.appendChild(ul);
-            currentFolder.querySelector('ul').appendChild(newFolder);
-
-            newFolder.addEventListener('contextmenu', (event) => {
-                event.preventDefault();
-                currentFolder = newFolder; // Set current folder for context menu
-                showContextMenu(event);
-            });
-        }
-    }
-}
-
-// Context Menu
-const contextMenu = document.createElement('div');
-contextMenu.classList.add('context-menu');
-document.body.appendChild(contextMenu);
-
-const newFileButton = document.createElement('button');
-newFileButton.textContent = 'New File';
-newFileButton.onclick = createNewFile;
-contextMenu.appendChild(newFileButton);
-
-const newFolderButton = document.createElement('button');
-newFolderButton.textContent = 'New Folder';
-newFolderButton.onclick = createNewFolder;
-contextMenu.appendChild(newFolderButton);
-
-document.addEventListener('click', () => {
-    contextMenu.style.display = 'none'; // Hide context menu on click
-});
-
-function showContextMenu(event) {
-    event.preventDefault();
-    contextMenu.style.display = 'block';
-    contextMenu.style.left = `${event.pageX}px`;
-    contextMenu.style.top = `${event.pageY}px`;
-}
-
-// Prevent the context menu from closing immediately
-contextMenu.addEventListener('contextmenu', (event) => {
-    event.preventDefault();
-});
+// Initialize charts and set interval for updates
+initializeCharts();
+setInterval(updateDeviceInfo, 5000);
+updateDeviceInfo(); // Initial call
